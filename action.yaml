@@ -1,0 +1,65 @@
+name: Setup Spread Sheets
+
+inputs:
+  spreadsheet-id:
+    description: Spread Sheets ID
+    required: true
+  pr-contents:
+    description: JSON PR contents
+    required: true
+  workload-identity-provider:
+    required: true
+  service-account:
+    required: true
+
+runs:
+  using: composite
+
+  steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js 18
+      uses: actions/setup-node@v1
+      with:
+        node-version: 18
+
+    - name: Cache node modules
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-node-modules
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+
+    - name: Install modules
+      shell: bash
+      run: |-
+        npm ci
+        npm install googleapis
+
+    - name: build
+      shell: bash
+      run: npx tsc
+
+    - id: auth
+      name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v0.6.0
+      with:
+        create_credentials_file: true
+        workload_identity_provider: ${{ inputs.workload-identity-provider }}
+        service_account: ${{ inputs.service-account }}
+
+    - name: gcloud auth login by workload identity
+      shell: bash
+      run: |-
+        gcloud auth login --brief --cred-file="${{ steps.auth.outputs.credentials_file_path }}"
+
+    - name: Update spread sheet
+      shell: bash
+      run: node dist/pr_index.js
+      env:
+        SPREADSHEET_ID: ${{ inputs.spreadsheet-id }}
+        PR_CONTENTS: ${{ inputs.pr-contents }}
