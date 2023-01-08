@@ -17,7 +17,9 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ./
         with:
-          spreadsheet-id: ${{ secrets.SPREADSHEET_ID }}
+          release-spreadsheet-id: ${{ secrets.RELEASE_SPREADSHEET_ID }}
+          member-spreadsheet-id: ${{ secrets.MEMBER_SPREADSHEET_ID }}
+          slack-post-url: ${{ secrets.SLACK_POST_URL }}
           pr-contents: '[{"id":"ii123iiei3t","type":"Chores","scope":"UNDEFINED","title":"update sheet","labels":"ci","url":"https://github.com/autowarefoundation/autoware.universe/pull/1","author":"tkimura4","description":"UNDEFINED","related_links":"UNDEFINED","test_performed":"UNDEFINED","note_for_reviewers":"hoge"}]'
           workload-identity-provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
           service-account: ${{ secrets.SERVICE_ACCOUNT }}
