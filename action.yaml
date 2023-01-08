@@ -1,8 +1,14 @@
 name: Setup Spread Sheets
 
 inputs:
-  spreadsheet-id:
-    description: Spread Sheets ID
+  release-spreadsheet-id:
+    description: Release Note Spread Sheets ID
+    required: true
+  member-spreadsheet-id:
+    description: Member Spread Sheets ID
+    required: true
+  slack-post-url:
+    description: Post URL
     required: true
   pr-contents:
     description: JSON PR contents
@@ -61,5 +67,7 @@ runs:
       shell: bash
       run: node dist/pr_index.js
       env:
-        SPREADSHEET_ID: ${{ inputs.spreadsheet-id }}
+        RELEASE_SPREADSHEET_ID: ${{ inputs.release-spreadsheet-id }}
+        MEMBER_SPREADSHEET_ID: ${{ inputs.member-spreadsheet-id }}
+        SLACK_POST_URL: ${{ inputs.slack-post-url }}
         PR_CONTENTS: ${{ inputs.pr-contents }}

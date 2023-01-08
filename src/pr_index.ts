@@ -5,41 +5,39 @@ import { JSONClient } from "google-auth-library/build/src/auth/googleauth";
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
 
 async function convertPRauthor2slackName(auth: GoogleAuth<JSONClient>, author) {
-  // read https://docs.google.com/spreadsheets/d/1RtWwL4Fh4ldT8NDtsk2kXugdudN64iRvwt2a7Dp0jGU/edit#gid=0
   const authClient = await auth.getClient();
-
   const sheets = google.sheets({ version: "v4", auth: authClient });
   try {
-    // const spreadsheetId = "1SSO0Z6MYuNMsS63BDSVJhN_wB-oIdABbtmn8u3pPkNs";
-    const spreadsheetId = "1gBV2yT3XjtPKhZ1UZC-_q7ShdAn3bKxd5U3kIiqE5m4";
+    const memberSpreadsheetId = process.env["MEMBER_SPREADSHEET_ID"];
     const sheetName = "EmployeeList_HRBrain";
     const res = await sheets.spreadsheets.values.get({
-      spreadsheetId,
+      spreadsheetId: memberSpreadsheetId,
       range: `${sheetName}!V2:W`,
     });
     const rows = res.data.values;
     if (rows && rows.length) {
+      // stringRows: [index, github_account_url]
       const stringRows = rows
         .map((row, idx) => {
           return [idx, row[1]];
         })
         .filter((value) => value[1] != undefined);
-      // [index, github_name]
+      // githubNames: [index, github_account_name]
       const githubNames = stringRows.map((url) => {
         return [url[0], url[1].split("/")[6]];
       });
-      // [github_name]
+      // nameList: [github_account_name]
       const nameList = githubNames.map((name) => {
         return name[1];
       });
-      const index = nameList.indexOf(author);
-      if (index == -1) {
+      // index: author index of nameList
+      const authorIndex = nameList.indexOf(author);
+
+      // If the author doesn't find in the nameList
+      if (authorIndex == -1) {
         return Promise.resolve(-1);
       }
-      const slackNames = rows.map((row) => {
-        return row;
-      });
-      const slackUrl = slackNames[githubNames[index][0]][0];
+      const slackUrl = rows[githubNames[authorIndex][0]][0];
       const slackID = slackUrl.split("/")[4];
       return Promise.resolve(slackID);
     } else {
@@ -53,8 +51,7 @@ async function convertPRauthor2slackName(auth: GoogleAuth<JSONClient>, author) {
 
 async function mentionAuthor(auth, pr) {
   const slackID = await convertPRauthor2slackName(auth, pr.author);
-  const postUrl =
-    "https://hooks.slack.com/services/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";
+  const postUrl = process.env["SLACK_POST_URL"];
   if (slackID != -1) {
     const mention = {
       text:
@@ -79,14 +76,13 @@ async function main(auth: GoogleAuth<JSONClient>) {
 
   const sheets = google.sheets({ version: "v4", auth: authClient });
   try {
-    const spreadsheetId = process.env["SPREADSHEET_ID"];
+    const releaseSpreadsheetId = process.env["RELEASE_SPREADSHEET_ID"];
     const prContents = JSON.parse(process.env["PR_CONTENTS"]!);
     const sheetName = "AWFPR";
 
-    let pr: any;
-    for (pr of prContents) {
+    for (const pr of prContents) {
       console.log(pr);
-      let values = Array(
+      const values = Array(
         pr.title,
         `=HYPERLINK("${pr.url}", "#"&"${pr.url.split("/").slice(-1)[0]}")`,
         pr.author,
@@ -100,45 +96,38 @@ async function main(auth: GoogleAuth<JSONClient>) {
         pr.id
       );
 
-      let request = {
-        spreadsheetId,
-        range: `${sheetName}!A2:L`,
-        valueInputOption: "USER_ENTERED",
-        insertDataOption: "INSERT_ROWS",
-        resource: {
-          majorDimension: "ROWS",
-          values: [values],
-        },
-        auth: authClient,
-      };
-      const sheet = (
-        await sheets.spreadsheets.get({
-          spreadsheetId,
-        })
-      ).data.sheets.find((s) => s.properties.title === sheetName);
-
-      // const numRows = sheet.properties.gridproperties.rowCount;
-
+      // Get PR id data from spread sheets
       const { data } = await sheets.spreadsheets.values.get({
-        spreadsheetId,
+        spreadsheetId: releaseSpreadsheetId,
         range: `${sheetName}!L2:L`,
       });
       const idValues = data.values.flat();
-      const numRows = data.values.length;
-      const index = idValues.findIndex((id) => id === pr.id);
-      if (index === -1) {
-        values.unshift(numRows + 1); // header
-        await sheets.spreadsheets.values.append(request);
+      const numIdRows = data.values.length;
+      const prIndex = idValues.findIndex((id) => id === pr.id);
+
+      // If the PR is new, add it to spread sheet
+      if (prIndex === -1) {
+        values.unshift(numIdRows + 1); // Add row number. +1 means header.
+        const addRequest = {
+          spreadsheetId: releaseSpreadsheetId,
+          range: `${sheetName}!A2:L`,
+          valueInputOption: "USER_ENTERED",
+          insertDataOption: "INSERT_ROWS",
+          resource: {
+            majorDimension: "ROWS",
+            values: [values],
+          },
+          auth: authClient,
+        };
+        await sheets.spreadsheets.values.append(addRequest);
       } else {
-        values.unshift(index + 1); // header
-        let request2 = {
-          spreadsheetId,
-          // range: `${sheetName}!A${index + 2}:${google.utils.encodeColumnName(
-          //   values.length
-          // )}${index + 2}`,
-          range: `${sheetName}!A${index + 2}:${String.fromCharCode(
-            65 + values.length - 1
-          )}${index + 2}`,
+        // If the PR is already written, update the contents
+        values.unshift(prIndex + 1); // Add row number. +1 means header.
+        const updateRequest = {
+          spreadsheetId: releaseSpreadsheetId,
+          range: `${sheetName}!A${prIndex + 2}:${String.fromCharCode(
+            65 + values.length
+          )}${prIndex + 2}`,
           valueInputOption: "USER_ENTERED",
           resource: {
             majorDimension: "ROWS",
@@ -146,16 +135,15 @@ async function main(auth: GoogleAuth<JSONClient>) {
           },
           auth: authClient,
         };
-        await sheets.spreadsheets.values.update(request2);
+        await sheets.spreadsheets.values.update(updateRequest);
       }
 
-      // If the author choose standard template PR
+      // If the author choose standard template PR, mention the author on slack.
       if (
         pr.related_links != "UNDEFINED" ||
         pr.test_performed != "UNDEFINED" ||
         pr.note_for_reviewers != "UNDEFINED"
       ) {
-        // mention author on slack
         mentionAuthor(auth, pr);
       }
     }
