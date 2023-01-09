@@ -49,7 +49,7 @@ async function convertPRauthor2slackName(auth: GoogleAuth<JSONClient>, author) {
   }
 }
 
-async function mentionAuthor(auth, pr) {
+async function mentionAuthor(auth, pr, operateRow) {
   const slackID = await convertPRauthor2slackName(auth, pr.author);
   const postUrl = process.env["SLACK_POST_URL"];
   if (slackID != -1) {
@@ -57,8 +57,9 @@ async function mentionAuthor(auth, pr) {
       text:
         "<@" +
         slackID +
-        "> Please add explanation about Product efffect for " +
-        pr.title,
+        "> Please write \"Topic changes\" and \"Product efffects\" for <" +
+        pr.url +  "|" + pr.title + "> at M" + 
+        operateRow + ":R" + operateRow + ".",
     };
     const mentionPayload = JSON.stringify(mention);
     const response = await fetch(postUrl, {
@@ -113,8 +114,10 @@ async function main(auth: GoogleAuth<JSONClient>) {
       const prIndex = idValues.findIndex((id) => id === pr.id);
 
       // If the PR is new, add it to spread sheet
+      let operateRow = -1;
       if (prIndex === -1) {
-        values.unshift(numIdRows + 1); // Add row number. +1 means header.
+        operateRow = numIdRows + 1;
+        values.unshift(operateRow); // Add row number. +1 means header.
         const addRequest = {
           spreadsheetId: releaseSpreadsheetId,
           range: `${sheetName}!A2:L`,
@@ -129,7 +132,8 @@ async function main(auth: GoogleAuth<JSONClient>) {
         await sheets.spreadsheets.values.append(addRequest);
       } else {
         // If the PR is already written, update the contents
-        values.unshift(prIndex + 1); // Add row number. +1 means header.
+        operateRow = prIndex + 1;
+        values.unshift(operateRow); // Add row number. +1 means header.
         const updateRequest = {
           spreadsheetId: releaseSpreadsheetId,
           range: `${sheetName}!A${prIndex + 2}:${String.fromCharCode(
@@ -151,7 +155,7 @@ async function main(auth: GoogleAuth<JSONClient>) {
         pr.test_performed != "UNDEFINED" ||
         pr.note_for_reviewers != "UNDEFINED"
       ) {
-        mentionAuthor(auth, pr);
+        mentionAuthor(auth, pr, operateRow);
       } else {
         console.log("The author chose small PR template so we do not mention the author.");
       }
