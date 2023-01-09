@@ -68,6 +68,11 @@ async function mentionAuthor(auth, pr) {
       },
       body: mentionPayload,
     });
+    console.log("slack post response: ", response.status);
+    console.log("Mentioned PR author on slack");
+  }
+  else {
+    console.log("No PR author found");
   }
 }
 
@@ -145,6 +150,8 @@ async function main(auth: GoogleAuth<JSONClient>) {
         pr.note_for_reviewers != "UNDEFINED"
       ) {
         mentionAuthor(auth, pr);
+      } else {
+        console.log("The author chose small PR template so we do not mention the author.");
       }
     }
   } catch (err) {
