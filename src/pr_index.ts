@@ -86,12 +86,14 @@ async function main(auth: GoogleAuth<JSONClient>) {
     const sheetName = "AWFPR";
 
     for (const pr of prContents) {
-      console.log(pr);
+      console.log("PR: ", pr);
+      const description = pr.description.replace(/\\n/g, '\n');
+
       const values = Array(
         pr.title,
         `=HYPERLINK("${pr.url}", "#"&"${pr.url.split("/").slice(-1)[0]}")`,
         pr.author,
-        pr.description,
+        description,
         pr.related_links,
         pr.test_performed,
         pr.note_for_reviewers,
