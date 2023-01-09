@@ -1,5 +1,5 @@
 {
-  "name": "ci_practice",
+  "name": "setup_spread_sheets",
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
@@ -17,16 +17,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/shmpwk/CI_practice.git"
+    "url": "git+https://github.com/shmpwk/setup-spread-sheets.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/shmpwk/CI_practice/issues"
+    "url": "https://github.com/shmpwk/setup-spread-sheets/issues"
   },
-  "homepage": "https://github.com/shmpwk/CI_practice#readme",
+  "homepage": "https://github.com/shmpwk/setup-spread-sheets#readme",
   "devDependencies": {
-    "@types/node": "^12.20.55",
+    "@types/node": "^18",
     "typescript": "^4.9.4"
   }
 }
