@@ -28,6 +28,7 @@ runs:
       uses: actions/setup-node@v3
       with:
         node-version: 18
+        cache-dependency-path: package-lock.json
 
     - name: Cache node modules
       uses: actions/cache@v3
@@ -43,11 +44,14 @@ runs:
     - name: Install modules
       shell: bash
       run: |-
+        cd "${GITHUB_ACTION_PATH}"
         npm ci
 
     - name: build
       shell: bash
-      run: npx tsc
+      run: |-
+        cd "${GITHUB_ACTION_PATH}"
+        npx tsc
 
     - id: auth
       name: Authenticate to Google Cloud
@@ -60,11 +64,14 @@ runs:
     - name: gcloud auth login by workload identity
       shell: bash
       run: |-
+        cd "${GITHUB_ACTION_PATH}"
         gcloud auth login --brief --cred-file="${{ steps.auth.outputs.credentials_file_path }}"
 
     - name: Update spread sheet
       shell: bash
-      run: node dist/pr_index.js
+      run: |-
+        cd "${GITHUB_ACTION_PATH}"
+        node dist/pr_index.js
       env:
         RELEASE_SPREADSHEET_ID: ${{ inputs.release-spreadsheet-id }}
         MEMBER_SPREADSHEET_ID: ${{ inputs.member-spreadsheet-id }}
