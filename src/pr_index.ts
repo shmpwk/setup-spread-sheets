@@ -84,6 +84,7 @@ async function main(auth: GoogleAuth<JSONClient>) {
   try {
     const releaseSpreadsheetId = process.env["RELEASE_SPREADSHEET_ID"];
     const prContents = JSON.parse(process.env["PR_CONTENTS"]!);
+    const enableOverwrite = process.env["ENABLE_OVERWRITE"];
     const sheetName = "AWFPR";
 
     for (const pr of prContents) {
@@ -130,7 +131,7 @@ async function main(auth: GoogleAuth<JSONClient>) {
           auth: authClient,
         };
         await sheets.spreadsheets.values.append(addRequest);
-      } else {
+      } else if (enableOverwrite) {
         // If the PR is already written, update the contents
         operateRow = prIndex + 1;
         values.unshift(operateRow); // Add row number. +1 means header.

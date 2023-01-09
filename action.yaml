@@ -17,6 +17,9 @@ inputs:
     required: true
   service-account:
     required: true
+  enable-overwrite:
+    required: false
+    default: true
 
 runs:
   using: composite
@@ -77,3 +80,4 @@ runs:
         MEMBER_SPREADSHEET_ID: ${{ inputs.member-spreadsheet-id }}
         SLACK_POST_URL: ${{ inputs.slack-post-url }}
         PR_CONTENTS: ${{ inputs.pr-contents }}
+        ENABLE_OVERWRITE: ${{ inputs.enable-overwrite }}
