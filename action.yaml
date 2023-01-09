@@ -44,7 +44,6 @@ runs:
       shell: bash
       run: |-
         npm ci
-        npm install googleapis
 
     - name: build
       shell: bash
