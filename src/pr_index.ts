@@ -110,9 +110,17 @@ async function main(auth: GoogleAuth<JSONClient>) {
         spreadsheetId: releaseSpreadsheetId,
         range: `${sheetName}!L2:L`,
       });
-      const idValues = data.values.flat();
-      const numIdRows = data.values.length;
-      const prIndex = idValues.findIndex((id) => id === pr.id);
+      let numIdRows: number;
+      let prIndex: number;
+      const allValues = data.values;
+      if (!allValues || !allValues[0]) {
+        numIdRows = 0;
+        prIndex = -1;
+      } else {
+        const idValues = allValues.flat();
+        numIdRows = allValues.length;
+        prIndex = idValues.findIndex((id) => id === pr.id);
+      }
 
       // If the PR is new, add it to spread sheet
       let operateRow = -1;
