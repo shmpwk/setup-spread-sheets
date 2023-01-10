@@ -20,6 +20,8 @@ inputs:
   enable-overwrite:
     required: false
     default: true
+  private-key:
+    required: true
 
 runs:
   using: composite
@@ -81,3 +83,4 @@ runs:
         SLACK_POST_URL: ${{ inputs.slack-post-url }}
         PR_CONTENTS: ${{ inputs.pr-contents }}
         ENABLE_OVERWRITE: ${{ inputs.enable-overwrite }}
+        PRIVATE_KRY: ${{ inputs.private-key }}

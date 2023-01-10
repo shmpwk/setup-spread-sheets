@@ -1,11 +1,44 @@
 import { google } from "googleapis";
 import { GoogleAuth } from "google-auth-library";
 import { JSONClient } from "google-auth-library/build/src/auth/googleauth";
+import { jwt } from "jsonwebtoken";
 
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
 
+async function getAccessToken() {
+  const privateKey = process.env["PRIVATE_KEY"];
+  const jwtHeader = {
+    alg: 'RS256',
+    typ: 'JWT',
+  };
+  
+  const jwtClaimSet = {
+    iss: 'spread-sheets-release-note@tier-iv-engineering-div-common.iam.gserviceaccount.com',
+    sub: 'shumpei.wakabayashi@tier4.jp',
+    scope: 'https://www.googleapis.com/auth/spreadsheets',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: (Date.now() / 1000) + 3600,
+    iat: Date.now() / 1000,
+  };
+
+  const jwtAssertion = jwt.sign(jwtClaimSet, privateKey, {header: jwtHeader, algorithm: 'RS256'});
+
+  const client = new google.auth.JWT(
+    jwtClaimSet.iss,
+    undefined,
+    privateKey,
+    SCOPES,
+    jwtClaimSet.sub,
+  );
+  
+  const res = await client.authorize();
+  return res.access_token;
+}
+
 async function convertPRauthor2slackName(auth: GoogleAuth<JSONClient>, author) {
   const authClient = await auth.getClient();
+  const tokens = getAccessToken();
+  authClient.setCredentials(tokens);
   const sheets = google.sheets({ version: "v4", auth: authClient });
   try {
     const memberSpreadsheetId = process.env["MEMBER_SPREADSHEET_ID"];
