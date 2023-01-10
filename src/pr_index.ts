@@ -139,6 +139,17 @@ async function main(auth: GoogleAuth<JSONClient>) {
           auth: authClient,
         };
         await sheets.spreadsheets.values.append(addRequest);
+
+        // If the author choose standard template PR, mention the author on slack.
+        if (
+          pr.related_links != "UNDEFINED" ||
+          pr.test_performed != "UNDEFINED" ||
+          pr.note_for_reviewers != "UNDEFINED"
+        ) {
+          mentionAuthor(auth, pr, operateRow);
+        } else {
+          console.log("The author chose small PR template so we do not mention the author.");
+        }
       } else if (enableOverwrite) {
         // If the PR is already written, update the contents
         operateRow = prIndex + 1;
@@ -156,17 +167,6 @@ async function main(auth: GoogleAuth<JSONClient>) {
           auth: authClient,
         };
         await sheets.spreadsheets.values.update(updateRequest);
-      }
-
-      // If the author choose standard template PR, mention the author on slack.
-      if (
-        pr.related_links != "UNDEFINED" ||
-        pr.test_performed != "UNDEFINED" ||
-        pr.note_for_reviewers != "UNDEFINED"
-      ) {
-        mentionAuthor(auth, pr, operateRow);
-      } else {
-        console.log("The author chose small PR template so we do not mention the author.");
       }
     }
   } catch (err) {
