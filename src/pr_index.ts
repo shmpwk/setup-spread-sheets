@@ -50,8 +50,19 @@ async function convertPRauthor2slackName(auth: GoogleAuth<JSONClient>, author) {
 }
 
 async function mentionAuthor(auth, pr, operateRow) {
-  const slackID = await convertPRauthor2slackName(auth, pr.author);
+  let slackID = await convertPRauthor2slackName(auth, pr.author);
   const postUrl = process.env["SLACK_POST_URL"];
+  if (slackID == -1) {
+    for (const approver of pr.approver) {
+      const approverSlackID = await convertPRauthor2slackName(auth, approver);
+      if (approverSlackID != -1) {
+        slackID = approverslackID;
+      }
+    }
+    if (slackID == -1) {
+      slackID = U01TCCBQTJL; // shmpwk ID, This should be replaced with org-eng-si
+    }
+  }
   if (slackID != -1) {
     const mention = {
       text:
@@ -95,6 +106,7 @@ async function main(auth: GoogleAuth<JSONClient>) {
         pr.title,
         `=HYPERLINK("${pr.url}", "#"&"${pr.url.split("/").slice(-1)[0]}")`,
         pr.author,
+        pr.approver,
         description,
         pr.related_links,
         pr.test_performed,
