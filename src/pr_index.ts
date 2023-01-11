@@ -4,6 +4,10 @@ import { JSONClient } from "google-auth-library/build/src/auth/googleauth";
 
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
 
+async function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function convertPRauthor2slackName(auth: GoogleAuth<JSONClient>, author) {
   const authClient = await auth.getClient();
   const sheets = google.sheets({ version: "v4", auth: authClient });
@@ -56,11 +60,14 @@ async function mentionAuthor(auth, pr, operateRow) {
     for (const approver of pr.approver) {
       const approverSlackID = await convertPRauthor2slackName(auth, approver);
       if (approverSlackID != -1) {
-        slackID = approverslackID;
+        slackID = approverSlackID;
+        console.log("Mention ", approver);
+        break;
       }
     }
     if (slackID == -1) {
-      slackID = U01TCCBQTJL; // shmpwk ID, This should be replaced with org-eng-si
+      slackID = "U01TCCBQTJL"; // shmpwk ID, This should be replaced with org-eng-si
+      console.log("Mention shmpwk");
     }
   }
   if (slackID != -1) {
@@ -69,8 +76,8 @@ async function mentionAuthor(auth, pr, operateRow) {
         "<@" +
         slackID +
         "> Please write \"Topic changes\" and \"Product efffects\" for <" +
-        pr.url +  "|" + pr.title + "> at M" + 
-        operateRow + ":R" + operateRow + ".",
+        pr.url +  "|" + pr.title + "> at N" + 
+        operateRow + ":O" + operateRow + ".",
     };
     const mentionPayload = JSON.stringify(mention);
     const response = await fetch(postUrl, {
@@ -96,7 +103,7 @@ async function main(auth: GoogleAuth<JSONClient>) {
     const releaseSpreadsheetId = process.env["RELEASE_SPREADSHEET_ID"];
     const prContents = JSON.parse(process.env["PR_CONTENTS"]!);
     const enableOverwrite = process.env["ENABLE_OVERWRITE"];
-    const sheetName = "AWFPR";
+    const sheetName = process.env["SHEET_NAME"];
 
     for (const pr of prContents) {
       console.log("PR: ", pr);
@@ -120,7 +127,7 @@ async function main(auth: GoogleAuth<JSONClient>) {
       // Get PR id data from spread sheets
       const { data } = await sheets.spreadsheets.values.get({
         spreadsheetId: releaseSpreadsheetId,
-        range: `${sheetName}!L2:L`,
+        range: `${sheetName}!M2:M`,
       });
       let numIdRows: number;
       let prIndex: number;
@@ -141,7 +148,7 @@ async function main(auth: GoogleAuth<JSONClient>) {
         values.unshift(operateRow); // Add row number. +1 means header.
         const addRequest = {
           spreadsheetId: releaseSpreadsheetId,
-          range: `${sheetName}!A2:L`,
+          range: `${sheetName}!A2:M`,
           valueInputOption: "USER_ENTERED",
           insertDataOption: "INSERT_ROWS",
           resource: {
@@ -151,6 +158,7 @@ async function main(auth: GoogleAuth<JSONClient>) {
           auth: authClient,
         };
         await sheets.spreadsheets.values.append(addRequest);
+        await sleep(1000);
 
         // If the author choose standard template PR, mention the author on slack.
         if (
@@ -159,11 +167,13 @@ async function main(auth: GoogleAuth<JSONClient>) {
           pr.note_for_reviewers != "UNDEFINED"
         ) {
           mentionAuthor(auth, pr, operateRow);
+          console.log("The author chose standard PR template so we mention the author.");
         } else {
           console.log("The author chose small PR template so we do not mention the author.");
         }
       } else if (enableOverwrite) {
         // If the PR is already written, update the contents
+        console.log("Overwrite spread sheets. Not mention author");
         operateRow = prIndex + 1;
         values.unshift(operateRow); // Add row number. +1 means header.
         const updateRequest = {
@@ -179,6 +189,7 @@ async function main(auth: GoogleAuth<JSONClient>) {
           auth: authClient,
         };
         await sheets.spreadsheets.values.update(updateRequest);
+        await sleep(1000);
       }
     }
   } catch (err) {

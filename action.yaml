@@ -20,6 +20,9 @@ inputs:
   enable-overwrite:
     required: false
     default: true
+  sheet-name:
+    required: false
+    default: シート1
 
 runs:
   using: composite
@@ -81,3 +84,4 @@ runs:
         SLACK_POST_URL: ${{ inputs.slack-post-url }}
         PR_CONTENTS: ${{ inputs.pr-contents }}
         ENABLE_OVERWRITE: ${{ inputs.enable-overwrite }}
+        SHEET_NAME: ${{ inputs.sheet-name }}
