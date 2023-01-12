@@ -8,7 +8,11 @@ async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function convertPRauthor2slackName(auth: GoogleAuth<JSONClient>, author) {
+let githubNames: any[]; // [index, github account name]
+let nameList: string[]; // [github account name]
+let memberRows: any[];  // [slack id url, github account url]
+
+async function getMember(auth: GoogleAuth<JSONClient>) {
   const authClient = await auth.getClient();
   const sheets = google.sheets({ version: "v4", auth: authClient });
   try {
@@ -18,32 +22,20 @@ async function convertPRauthor2slackName(auth: GoogleAuth<JSONClient>, author) {
       spreadsheetId: memberSpreadsheetId,
       range: `${sheetName}!V2:W`,
     });
-    const rows = res.data.values;
-    if (rows && rows.length) {
+    memberRows = res.data.values;
+    if (memberRows && memberRows.length) {
       // stringRows: [index, github_account_url]
-      const stringRows = rows
+      const stringRows: any[] = memberRows
         .map((row, idx) => {
           return [idx, row[1]];
         })
         .filter((value) => value[1] != undefined);
-      // githubNames: [index, github_account_name]
-      const githubNames = stringRows.map((url) => {
+      githubNames = stringRows.map((url) => {
         return [url[0], url[1].split("/")[6]];
       });
-      // nameList: [github_account_name]
-      const nameList = githubNames.map((name) => {
+      nameList = githubNames.map((name) => {
         return name[1];
       });
-      // index: author index of nameList
-      const authorIndex = nameList.indexOf(author);
-
-      // If the author doesn't find in the nameList
-      if (authorIndex == -1) {
-        return Promise.resolve(-1);
-      }
-      const slackUrl = rows[githubNames[authorIndex][0]][0];
-      const slackID = slackUrl.split("/")[4];
-      return Promise.resolve(slackID);
     } else {
       console.log("No data found.");
     }
@@ -53,15 +45,29 @@ async function convertPRauthor2slackName(auth: GoogleAuth<JSONClient>, author) {
   }
 }
 
-async function mentionAuthor(auth, pr, operateRow) {
-  let slackID = await convertPRauthor2slackName(auth, pr.author);
+function convertPRauthor2slackName(author) {
+  // index: author index of nameList
+  const authorIndex = nameList.indexOf(author);
+
+  // If the author doesn't find in the nameList
+  if (authorIndex == -1) {
+    return Promise.resolve(-1);
+  }
+  const slackUrl = memberRows[githubNames[authorIndex][0]][0];
+  const slackID = slackUrl.split("/")[4];
+  return Promise.resolve(slackID);
+}
+
+async function mentionAuthor(pr, operateRow) {
+  let slackID = await convertPRauthor2slackName(pr.author);
   const postUrl = process.env["SLACK_POST_URL"];
   if (slackID == -1) {
-    for (const approver of pr.approver) {
-      const approverSlackID = await convertPRauthor2slackName(auth, approver);
+    const approvers = pr.approver.split('\n');
+    for (const approver of approvers) {
+      const approverSlackID = await convertPRauthor2slackName(approver);
       if (approverSlackID != -1) {
         slackID = approverSlackID;
-        console.log("Mention ", approver);
+        console.log("Mention PR approver:", approver);
         break;
       }
     }
@@ -88,7 +94,7 @@ async function mentionAuthor(auth, pr, operateRow) {
       body: mentionPayload,
     });
     console.log("slack post response: ", response.status);
-    console.log("Mentioned PR author on slack");
+    console.log("Mentioned PR author:", pr.author);
   }
   else {
     console.log("No PR author found");
@@ -97,6 +103,7 @@ async function mentionAuthor(auth, pr, operateRow) {
 
 async function main(auth: GoogleAuth<JSONClient>) {
   const authClient = await auth.getClient();
+  getMember(auth);
 
   const sheets = google.sheets({ version: "v4", auth: authClient });
   try {
@@ -166,7 +173,7 @@ async function main(auth: GoogleAuth<JSONClient>) {
           pr.test_performed != "UNDEFINED" ||
           pr.note_for_reviewers != "UNDEFINED"
         ) {
-          mentionAuthor(auth, pr, operateRow);
+          mentionAuthor(pr, operateRow);
           console.log("The author chose standard PR template so we mention the author.");
         } else {
           console.log("The author chose small PR template so we do not mention the author.");
