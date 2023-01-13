@@ -171,7 +171,13 @@ async function main(auth: GoogleAuth<JSONClient>) {
         if (
           pr.related_links != "UNDEFINED" ||
           pr.test_performed != "UNDEFINED" ||
-          pr.note_for_reviewers != "UNDEFINED"
+          pr.note_for_reviewers != "UNDEFINED" ||
+          pr.title.toLowerCase().includes("change topic") ||
+          pr.title.toLowerCase().includes("topic change") ||
+          pr.title.toLowerCase().includes("remove") ||
+          pr.description.toLowerCase().includes("change topic") ||
+          pr.description.toLowerCase().includes("topic change") ||
+          pr.description.toLowerCase().includes("remove")
         ) {
           mentionAuthor(pr, operateRow);
           console.log("The author chose standard PR template so we mention the author.");

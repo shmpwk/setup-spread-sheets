@@ -20,7 +20,7 @@ jobs:
           release-spreadsheet-id: ${{ secrets.RELEASE_SPREADSHEET_ID }}
           member-spreadsheet-id: ${{ secrets.MEMBER_SPREADSHEET_ID }}
           slack-post-url: ${{ secrets.SLACK_POST_URL }}
-          pr-contents: '[{"id":"ii123iiei3t","type":"Chores","scope":"UNDEFINED","title":"update sheet","labels":"ci","url":"https://github.com/autowarefoundation/autoware.universe/pull/1","author":"poke", "approver":"tkimura4\nTakaHoeibe","description":"UNDEFINED","related_links":"UNDEFINED","test_performed":"UNDEFINED","note_for_reviewers":"hoge"}]'
+          pr-contents: '[{"id":"ii123iiei3t","type":"Chores","scope":"UNDEFINED","title":"update sheet","labels":"ci","url":"https://github.com/autowarefoundation/autoware.universe/pull/1","author":"poke", "approver":"tkimura4\nTakaHoeibe","description":"REMOVE THE WORLD","related_links":"UNDEFINED","test_performed":"UNDEFINED","note_for_reviewers":"UNDEFINED"}]'
           workload-identity-provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
           service-account: ${{ secrets.SERVICE_ACCOUNT }}
           sheet-name: "sheet1"
