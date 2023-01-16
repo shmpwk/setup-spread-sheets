@@ -1,6 +1,7 @@
 import { google } from "googleapis";
 import { GoogleAuth } from "google-auth-library";
 import { JSONClient } from "google-auth-library/build/src/auth/googleauth";
+import prContents from '../../../../pr_jarray.json';
 
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
 
@@ -108,7 +109,7 @@ async function main(auth: GoogleAuth<JSONClient>) {
   const sheets = google.sheets({ version: "v4", auth: authClient });
   try {
     const releaseSpreadsheetId = process.env["RELEASE_SPREADSHEET_ID"];
-    const prContents = JSON.parse(process.env["PR_CONTENTS"]!);
+    // const prContents = JSON.parse(process.env["PR_CONTENTS"]!);
     const enableOverwrite = process.env["ENABLE_OVERWRITE"];
     const sheetName = process.env["SHEET_NAME"];
 
@@ -116,7 +117,7 @@ async function main(auth: GoogleAuth<JSONClient>) {
       console.log("PR: ", pr);
       const description = pr.description.replace(/\\n/g, '\n');
 
-      const values = Array(
+      const values: any[] = Array(
         pr.title,
         `=HYPERLINK("${pr.url}", "#"&"${pr.url.split("/").slice(-1)[0]}")`,
         pr.author,

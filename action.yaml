@@ -12,7 +12,7 @@ inputs:
     required: true
   pr-contents:
     description: JSON PR contents
-    required: true
+    required: false
   workload-identity-provider:
     required: true
   service-account:
@@ -56,7 +56,14 @@ runs:
     - name: build
       shell: bash
       run: |-
+        # build
         cd "${GITHUB_ACTION_PATH}"
+        ls "${GITHUB_ACTION_PATH}"/../../../
+        echo "----------------------"
+        if [ ! -e "${GITHUB_ACTION_PATH}"/../../../pr_jarray.json ]; then
+          echo '[{"id":"ii123iiei3t","type":"Chores","scope":"UNDEFINED","title":"update sheet","labels":"ci","url":"https://github.com/autowarefoundation/autoware.universe/pull/1","author":"poke", "approver":"tkimura4\nTakaHoeibe","description":"REMOVE THE WORLD","related_links":"UNDEFINED","test_performed":"UNDEFINED","note_for_reviewers":"UNDEFINED"}]' > "${GITHUB_ACTION_PATH}"/../../../pr_jarray.json
+        fi
+        ls "${GITHUB_ACTION_PATH}"/../../../
         npx tsc
 
     - id: auth
@@ -70,14 +77,17 @@ runs:
     - name: gcloud auth login by workload identity
       shell: bash
       run: |-
+        # gcloud auth login
         cd "${GITHUB_ACTION_PATH}"
         gcloud auth login --brief --cred-file="${{ steps.auth.outputs.credentials_file_path }}"
 
     - name: Update spread sheet
       shell: bash
       run: |-
+        # update spread sheet
         cd "${GITHUB_ACTION_PATH}"
-        node dist/pr_index.js
+        tree ../../../ -L 3
+        node dist/work/setup-spread-sheets/setup-spread-sheets/src/pr_index.js
       env:
         RELEASE_SPREADSHEET_ID: ${{ inputs.release-spreadsheet-id }}
         MEMBER_SPREADSHEET_ID: ${{ inputs.member-spreadsheet-id }}
