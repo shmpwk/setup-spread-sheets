@@ -60,9 +60,9 @@ runs:
         cd "${GITHUB_ACTION_PATH}"
         ls "${GITHUB_ACTION_PATH}"/../../../
         echo "----------------------"
-        if [ ! -e "${GITHUB_ACTION_PATH}"/../../../pr_jarray.json ]; then
-          echo '[{"id":"ii123iiei3t","type":"Chores","scope":"UNDEFINED","title":"update sheet","labels":"ci","url":"https://github.com/autowarefoundation/autoware.universe/pull/1","author":"poke", "approver":"tkimura4\nTakaHoeibe","description":"REMOVE THE WORLD","related_links":"UNDEFINED","test_performed":"UNDEFINED","note_for_reviewers":"UNDEFINED"}]' > "${GITHUB_ACTION_PATH}"/../../../pr_jarray.json
-        fi
+        # if [ ! -e "${GITHUB_ACTION_PATH}"/../../../pr_jarray.json ]; then
+        #   echo '[{"id":"ii123iiei3t","type":"Chores","scope":"UNDEFINED","title":"update sheet","labels":"ci","url":"https://github.com/autowarefoundation/autoware.universe/pull/1","author":"poke", "approver":"tkimura4\nTakaHoeibe","description":"REMOVE THE WORLD","related_links":"UNDEFINED","test_performed":"UNDEFINED","note_for_reviewers":"UNDEFINED"}]' > "${GITHUB_ACTION_PATH}"/../../../pr_jarray.json
+        # fi
         ls "${GITHUB_ACTION_PATH}"/../../../
         npx tsc
 
@@ -86,8 +86,7 @@ runs:
       run: |-
         # update spread sheet
         cd "${GITHUB_ACTION_PATH}"
-        tree ../../../ -L 3
-        node dist/work/setup-spread-sheets/setup-spread-sheets/src/pr_index.js
+        node dist/pr_index.js
       env:
         RELEASE_SPREADSHEET_ID: ${{ inputs.release-spreadsheet-id }}
         MEMBER_SPREADSHEET_ID: ${{ inputs.member-spreadsheet-id }}

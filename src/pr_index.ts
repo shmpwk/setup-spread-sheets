@@ -1,9 +1,32 @@
 import { google } from "googleapis";
 import { GoogleAuth } from "google-auth-library";
 import { JSONClient } from "google-auth-library/build/src/auth/googleauth";
-import prContents from '../../../../pr_jarray.json';
+import { Readable } from "stream";
+import * as fs from 'fs';
+
+// import prContents from '../../../../pr_jarray.json';
 
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
+const DRIVE_SCOPES = ["https://www.googleapis.com/auth/drive"];
+
+interface PrContents {
+  [key: string]: any;
+}
+
+// type PrContents = {
+//   id: string;
+//   type: string;
+//   scope: string;
+//   title: string;
+//   labels: string;
+//   url: string;
+//   author: string;
+//   approver: string;
+//   description: string;
+//   related_links: string;
+//   test_performed: string;
+//   note_for_reviewers: string
+// }
 
 async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -12,6 +35,41 @@ async function sleep(ms: number) {
 let githubNames: any[]; // [index, github account name]
 let nameList: string[]; // [github account name]
 let memberRows: any[];  // [slack id url, github account url]
+// let prContents: any[];
+
+async function getFile() {
+  const drive = new google.auth.GoogleAuth({
+    scopes: DRIVE_SCOPES,
+  });
+  const authClient = await drive.getClient();
+  const driveService = google.drive({version: 'v3', auth: authClient});
+  
+  // const fileId = '1M7qHT-8Mt-8_oPIwY8VlJtqN_1WoV354';
+  // const fileId = '1KXsmZo42vH8aQYGinuvxqr7kytZmjY73Ryvj0jxDwTs';
+  const fileId = '1GTiAXvEhsTsr_UBxcwNcaoetETXzQrSD';
+  // const dest = fs.createWriteStream('./pr_jarray.json');
+  return new Promise((resolve, reject) => {
+    driveService.files.get({fileId, alt: 'media'}, {responseType: 'stream'},
+      (err, res) => {
+        if (err) return console.log(err);
+        const stream = res.data as Readable;
+        stream.setEncoding('utf8');
+        let prData = "";
+        stream.on("data", chunk => prData += chunk);
+        stream.on("end", () => {
+          try {
+            let prContents: PrContents = JSON.parse(prData);
+            console.log(prContents);
+            console.log("------------------------");
+            resolve(prContents);
+            // stream.pipe(dest);
+          } catch (e) {
+            reject(e);
+          }
+        });
+    });
+  });
+}
 
 async function getMember(auth: GoogleAuth<JSONClient>) {
   const authClient = await auth.getClient();
@@ -110,10 +168,14 @@ async function main(auth: GoogleAuth<JSONClient>) {
   try {
     const releaseSpreadsheetId = process.env["RELEASE_SPREADSHEET_ID"];
     // const prContents = JSON.parse(process.env["PR_CONTENTS"]!);
+    const prContents: PrContents = await getFile();
+    console.log(prContents);
+    console.log("=================");
     const enableOverwrite = process.env["ENABLE_OVERWRITE"];
     const sheetName = process.env["SHEET_NAME"];
+    let prContentsArray = Object.keys(prContents).map(k => prContents[k]);
 
-    for (const pr of prContents) {
+    for (const pr of prContentsArray) {
       console.log("PR: ", pr);
       const description = pr.description.replace(/\\n/g, '\n');
 
