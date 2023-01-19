@@ -107,8 +107,8 @@ async function mentionAuthor(pr, operateRow) {
       }
     }
     if (slackID == -1) {
-      slackID = "U01TCCBQTJL"; // shmpwk ID, This should be replaced with org-eng-si
-      console.log("Mention shmpwk");
+      slackID = "S03FPJ8THLH"; // org-eng-si ID
+      console.log("Mention org-eng-si");
     }
   }
   if (slackID != -1) {
