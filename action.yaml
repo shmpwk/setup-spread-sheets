@@ -12,7 +12,7 @@ inputs:
     required: true
   pr-contents:
     description: JSON PR contents
-    required: true
+    required: false
   workload-identity-provider:
     required: true
   service-account:
@@ -23,6 +23,9 @@ inputs:
   sheet-name:
     required: false
     default: シート1
+  file-id:
+    required: false
+    default: '1GTiAXvEhsTsr_UBxcwNcaoetETXzQrSD'
 
 runs:
   using: composite
@@ -56,6 +59,7 @@ runs:
     - name: build
       shell: bash
       run: |-
+        # build
         cd "${GITHUB_ACTION_PATH}"
         npx tsc
 
@@ -70,12 +74,14 @@ runs:
     - name: gcloud auth login by workload identity
       shell: bash
       run: |-
+        # gcloud auth login
         cd "${GITHUB_ACTION_PATH}"
         gcloud auth login --brief --cred-file="${{ steps.auth.outputs.credentials_file_path }}"
 
     - name: Update spread sheet
       shell: bash
       run: |-
+        # update spread sheet
         cd "${GITHUB_ACTION_PATH}"
         node dist/pr_index.js
       env:
@@ -85,3 +91,4 @@ runs:
         PR_CONTENTS: ${{ inputs.pr-contents }}
         ENABLE_OVERWRITE: ${{ inputs.enable-overwrite }}
         SHEET_NAME: ${{ inputs.sheet-name }}
+        FILE_ID: ${{ inputs.file-id }}

@@ -1,8 +1,15 @@
 import { google } from "googleapis";
 import { GoogleAuth } from "google-auth-library";
 import { JSONClient } from "google-auth-library/build/src/auth/googleauth";
+import { Readable } from "stream";
+import * as fs from 'fs';
 
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
+const DRIVE_SCOPES = ["https://www.googleapis.com/auth/drive"];
+
+interface PrContents {
+  [key: string]: any;
+}
 
 async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -11,6 +18,34 @@ async function sleep(ms: number) {
 let githubNames: any[]; // [index, github account name]
 let nameList: string[]; // [github account name]
 let memberRows: any[];  // [slack id url, github account url]
+
+async function getFile() {
+  const drive = new google.auth.GoogleAuth({
+    scopes: DRIVE_SCOPES,
+  });
+  const authClient = await drive.getClient();
+  const driveService = google.drive({version: 'v3', auth: authClient});
+  
+  const fileId = process.env["FILE_ID"];
+  return new Promise((resolve, reject) => {
+    driveService.files.get({fileId, alt: 'media'}, {responseType: 'stream'},
+      (err, res) => {
+        if (err) return console.log(err);
+        const stream = res.data as Readable;
+        stream.setEncoding('utf8');
+        let prData = "";
+        stream.on("data", chunk => prData += chunk);
+        stream.on("end", () => {
+          try {
+            let prContents: PrContents = JSON.parse(prData);
+            resolve(prContents);
+          } catch (e) {
+            reject(e);
+          }
+        });
+    });
+  });
+}
 
 async function getMember(auth: GoogleAuth<JSONClient>) {
   const authClient = await auth.getClient();
@@ -108,15 +143,17 @@ async function main(auth: GoogleAuth<JSONClient>) {
   const sheets = google.sheets({ version: "v4", auth: authClient });
   try {
     const releaseSpreadsheetId = process.env["RELEASE_SPREADSHEET_ID"];
-    const prContents = JSON.parse(process.env["PR_CONTENTS"]!);
+    // const prContents = JSON.parse(process.env["PR_CONTENTS"]!);
+    const prContents: PrContents = await getFile();
     const enableOverwrite = process.env["ENABLE_OVERWRITE"];
     const sheetName = process.env["SHEET_NAME"];
+    let prContentsArray = Object.keys(prContents).map(k => prContents[k]);
 
-    for (const pr of prContents) {
+    for (const pr of prContentsArray) {
       console.log("PR: ", pr);
       const description = pr.description.replace(/\\n/g, '\n');
 
-      const values = Array(
+      const values: any[] = Array(
         pr.title,
         `=HYPERLINK("${pr.url}", "#"&"${pr.url.split("/").slice(-1)[0]}")`,
         pr.author,
