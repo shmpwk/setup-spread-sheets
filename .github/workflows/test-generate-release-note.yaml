@@ -24,3 +24,4 @@ jobs:
           workload-identity-provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
           service-account: ${{ secrets.SERVICE_ACCOUNT }}
           sheet-name: "sheet1"
+          file-id: '1GTiAXvEhsTsr_UBxcwNcaoetETXzQrSD'

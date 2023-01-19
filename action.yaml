@@ -23,6 +23,9 @@ inputs:
   sheet-name:
     required: false
     default: シート1
+  file-id:
+    required: false
+    default: '1GTiAXvEhsTsr_UBxcwNcaoetETXzQrSD'
 
 runs:
   using: composite
@@ -58,12 +61,6 @@ runs:
       run: |-
         # build
         cd "${GITHUB_ACTION_PATH}"
-        ls "${GITHUB_ACTION_PATH}"/../../../
-        echo "----------------------"
-        # if [ ! -e "${GITHUB_ACTION_PATH}"/../../../pr_jarray.json ]; then
-        #   echo '[{"id":"ii123iiei3t","type":"Chores","scope":"UNDEFINED","title":"update sheet","labels":"ci","url":"https://github.com/autowarefoundation/autoware.universe/pull/1","author":"poke", "approver":"tkimura4\nTakaHoeibe","description":"REMOVE THE WORLD","related_links":"UNDEFINED","test_performed":"UNDEFINED","note_for_reviewers":"UNDEFINED"}]' > "${GITHUB_ACTION_PATH}"/../../../pr_jarray.json
-        # fi
-        ls "${GITHUB_ACTION_PATH}"/../../../
         npx tsc
 
     - id: auth
@@ -94,3 +91,4 @@ runs:
         PR_CONTENTS: ${{ inputs.pr-contents }}
         ENABLE_OVERWRITE: ${{ inputs.enable-overwrite }}
         SHEET_NAME: ${{ inputs.sheet-name }}
+        FILE_ID: ${{ inputs.file-id }}
