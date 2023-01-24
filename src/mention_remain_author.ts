@@ -53,8 +53,6 @@ async function mentionAuthor(operateRow) {
 
 function convertPRauthor2slackName(author) {
   // index: author index of nameList
-  console.log(nameList);
-  console.log("----------");
   const authorIndex = nameList.indexOf(author);
 
   // If the author doesn't find in the nameList
@@ -112,22 +110,32 @@ async function main(auth: GoogleAuth<JSONClient>) {
     const { data } = await sheets.spreadsheets.values.get({
       spreadsheetId: releaseSpreadsheetId,
       range: `${sheetName}!A2:O`,
+      valueRenderOption: "FORMULA",
+    });
+    // mention the forgetful author
+    let isMentioned = false;
+    data.values.map((row) => {
+      console.log(`${row[13]}, ${row[14]}`);
     });
     for (const row of data.values) {
       if (
+        (row[13] == undefined && row[14] == undefined) &&
         (row[6] != "UNDEFINED" || 
         row[7] != "UNDEFINED" || 
-        row[8] != "UNDEFINED") &&
-        (row[13] == "" && row[14] == "") ||
+        row[8] != "UNDEFINED" ||
         row[1].toLowerCase().includes("change topic") ||
         row[1].toLowerCase().includes("topic change") ||
         row[1].toLowerCase().includes("remove") ||
         row[5].toLowerCase().includes("change topic") ||
         row[5].toLowerCase().includes("topic change") ||
-        row[5].toLowerCase().includes("remove")
+        row[5].toLowerCase().includes("remove"))
       ) {       
         mentionAuthor(row);
+        isMentioned = true;
       }
+    }
+    if (!isMentioned) {
+      console.log("All authors or approvers who have to write addional comment on the release notes have finished writing")
     }
   } catch (err) {
     console.log("The API returned an error: " + err);
