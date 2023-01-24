@@ -1,0 +1,27 @@
+name: mention-all-those-who-forgot-to-write-release-notes
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  oidc:
+    environment: oidc
+
+    permissions:
+      contents: read
+      id-token: write
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./
+        with:
+          release-spreadsheet-id: ${{ secrets.RELEASE_SPREADSHEET_ID }}
+          member-spreadsheet-id: ${{ secrets.MEMBER_SPREADSHEET_ID }}
+          slack-post-url: ${{ secrets.SLACK_POST_URL }}
+          workload-identity-provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+          sheet-name: "sheet1"
+          service-account: ${{ secrets.SERVICE_ACCOUNT }}
+          file-id: '1GTiAXvEhsTsr_UBxcwNcaoetETXzQrSD'
+          mention-forgetfulness: true
