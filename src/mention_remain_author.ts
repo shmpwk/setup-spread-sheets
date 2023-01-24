@@ -4,6 +4,10 @@ import { JSONClient } from "google-auth-library/build/src/auth/googleauth";
 
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
 
+async function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 let githubNames: any[]; // [index, github account name]
 let nameList: string[]; // [github account name]
 let memberRows: any[];  // [slack id url, github account url]
@@ -131,6 +135,7 @@ async function main(auth: GoogleAuth<JSONClient>) {
       ) {       
         mentionAuthor(row);
         isMentioned = true;
+        await sleep(1000);
       }
     }
     if (!isMentioned) {
