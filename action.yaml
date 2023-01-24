@@ -26,6 +26,9 @@ inputs:
   file-id:
     required: false
     default: '1GTiAXvEhsTsr_UBxcwNcaoetETXzQrSD'
+  mention-forgetfulness:
+    required: false
+    default: false
 
 runs:
   using: composite
@@ -80,6 +83,7 @@ runs:
 
     - name: Update spread sheet
       shell: bash
+      if: ${{ inputs.mention-forgetfulness == 'false' }}
       run: |-
         # update spread sheet
         cd "${GITHUB_ACTION_PATH}"
@@ -92,3 +96,19 @@ runs:
         ENABLE_OVERWRITE: ${{ inputs.enable-overwrite }}
         SHEET_NAME: ${{ inputs.sheet-name }}
         FILE_ID: ${{ inputs.file-id }}
+
+    - name: Mention all those who forgot to write release notes
+      shell: bash
+      if: ${{ inputs.mention-forgetfulness == 'true' }}
+      run: |-
+        # mention forgetfulness
+        cd "${GITHUB_ACTION_PATH}"
+        node dist/mention_remain_author.js
+      env:
+        RELEASE_SPREADSHEET_ID: ${{ inputs.release-spreadsheet-id }}
+        MEMBER_SPREADSHEET_ID: ${{ inputs.member-spreadsheet-id }}
+        SLACK_POST_URL: ${{ inputs.slack-post-url }}
+        PR_CONTENTS: ${{ inputs.pr-contents }}
+        ENABLE_OVERWRITE: ${{ inputs.enable-overwrite }}
+        SHEET_NAME: ${{ inputs.sheet-name }}
+ 
