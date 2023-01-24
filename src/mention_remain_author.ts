@@ -53,6 +53,8 @@ async function mentionAuthor(operateRow) {
 
 function convertPRauthor2slackName(author) {
   // index: author index of nameList
+  console.log(nameList);
+  console.log("----------");
   const authorIndex = nameList.indexOf(author);
 
   // If the author doesn't find in the nameList
@@ -104,7 +106,7 @@ async function main(auth: GoogleAuth<JSONClient>) {
   const sheets = google.sheets({ version: "v4", auth: authClient });
   try {
     const releaseSpreadsheetId = process.env["RELEASE_SPREADSHEET_ID"];
-    const sheetName = "AWFPR";
+    const sheetName = process.env["SHEET_NAME"];
 
     // Get PR id data from spread sheets
     const { data } = await sheets.spreadsheets.values.get({
