@@ -27,12 +27,13 @@ async function mentionAuthor(operateRow) {
     }
   }
   if (slackID != -1) {
+    const url = operateRow[2].match(/"(.*?)"/)[1];
     const mention = {
       text:
         "<@" +
         slackID +
         "> Please write \"Topic changes\" and \"Product efffects\" for <" +
-        operateRow[2] +  "|" + operateRow[1] + "> at N" + 
+        url +  "|" + operateRow[1] + "> at N" + 
         operateRow[0] + ":O" + operateRow[0] + ".",
     };
     const mentionPayload = JSON.stringify(mention);
@@ -88,6 +89,7 @@ async function getMember(auth: GoogleAuth<JSONClient>) {
       nameList = githubNames.map((name) => {
         return name[1];
       });
+      console.log("Get member from spread sheet.")
     } else {
       console.log("No data found.");
     }
@@ -99,7 +101,7 @@ async function getMember(auth: GoogleAuth<JSONClient>) {
 
 async function main(auth: GoogleAuth<JSONClient>) {
   const authClient = await auth.getClient();
-  getMember(auth);
+  const isGetMember = await getMember(auth);
 
   const sheets = google.sheets({ version: "v4", auth: authClient });
   try {
@@ -114,9 +116,6 @@ async function main(auth: GoogleAuth<JSONClient>) {
     });
     // mention the forgetful author
     let isMentioned = false;
-    data.values.map((row) => {
-      console.log(`${row[13]}, ${row[14]}`);
-    });
     for (const row of data.values) {
       if (
         (row[13] == undefined && row[14] == undefined) &&
