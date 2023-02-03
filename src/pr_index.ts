@@ -93,7 +93,7 @@ function convertPRauthor2slackName(author) {
   return Promise.resolve(slackID);
 }
 
-async function mentionAuthor(pr, operateRow) {
+async function mentionAuthor(pr, operateRow, has_product_effect) {
   let slackID = await convertPRauthor2slackName(pr.author);
   const postUrl = process.env["SLACK_POST_URL"];
   if (slackID == -1) {
@@ -112,14 +112,27 @@ async function mentionAuthor(pr, operateRow) {
     }
   }
   if (slackID != -1) {
-    const mention = {
-      text:
-        "<@" +
-        slackID +
-        "> Please write \"Topic changes\" and \"Product efffects\" for <" +
-        pr.url +  "|" + pr.title + "> at N" + 
-        operateRow + ":O" + operateRow + ".",
-    };
+    let mention: any;
+    if (has_product_effect) {
+      mention = {
+        text:
+          "<@" +
+          slackID +
+          "> Please write \"Topic changes\" and \"Product efffects\" for <" +
+          pr.url +  "|" + pr.title + "> at N" + 
+          operateRow + ":O" + operateRow + ".",
+      };
+    }
+    else {
+      mention = {
+        text:
+          "<@" +
+          slackID +
+          "> Please write \"Test performed\" for <" +
+          pr.url +  "|" + pr.title + "> at H" + 
+          operateRow + " since the PR is Feature or Bug fix.",
+      };
+    }
     const mentionPayload = JSON.stringify(mention);
     const response = await fetch(postUrl, {
       method: "POST",
@@ -204,7 +217,10 @@ async function main(auth: GoogleAuth<JSONClient>) {
         await sheets.spreadsheets.values.append(addRequest);
         await sleep(1000);
 
-        // If the author choose standard template PR, mention the author on slack.
+        // If the author choose standard template PR, 
+        // or use "change topic", "topic change" or "remove"
+        // or it is feature or Bug fix PR, 
+        // mention the author on slack.
         if (
           pr.related_links != "UNDEFINED" ||
           pr.test_performed != "UNDEFINED" ||
@@ -216,8 +232,16 @@ async function main(auth: GoogleAuth<JSONClient>) {
           pr.description.toLowerCase().includes("topic change") ||
           pr.description.toLowerCase().includes("remove")
         ) {
-          mentionAuthor(pr, operateRow);
+          const has_product_effect = true;
+          mentionAuthor(pr, operateRow, has_product_effect);
           console.log("The author chose standard PR template so we mention the author.");
+        } else if (
+          (pr.type == "Features" && pr.test_performed == "UNDEFINED") ||
+          (pr.type == "Bug Fixes" && pr.test_performed == "UNDEFINED")
+        ) {
+          const has_product_effect = false;
+          mentionAuthor(pr, operateRow, has_product_effect);
+          console.log("The author did not write test performed though the PR is feature or bug fix so we mention the author.");
         } else {
           console.log("The author chose small PR template so we do not mention the author.");
         }
