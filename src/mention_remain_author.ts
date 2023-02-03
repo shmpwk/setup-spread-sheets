@@ -12,7 +12,7 @@ let githubNames: any[]; // [index, github account name]
 let nameList: string[]; // [github account name]
 let memberRows: any[];  // [slack id url, github account url]
 
-async function mentionAuthor(operateRow) {
+async function mentionAuthor(operateRow, has_product_effect) {
   let slackID = await convertPRauthor2slackName(operateRow[3]);
   const postUrl = process.env["SLACK_POST_URL"];
   if (slackID == -1) {
@@ -32,14 +32,27 @@ async function mentionAuthor(operateRow) {
   }
   if (slackID != -1) {
     const url = operateRow[2].match(/"(.*?)"/)[1];
-    const mention = {
-      text:
-        "<@" +
-        slackID +
-        "> Please write \"Topic changes\" and \"Product efffects\" for <" +
-        url +  "|" + operateRow[1] + "> at N" + 
-        operateRow[0] + ":O" + operateRow[0] + ".",
-    };
+    let mention: any;
+    if (has_product_effect) {
+      mention = {
+        text:
+          "<@" +
+          slackID +
+          "> Please write \"Topic changes\" and \"Product efffects\" for <" +
+          url +  "|" + operateRow[1] + "> at N" + 
+          operateRow[0] + ":O" + operateRow[0] + ".",
+      };
+    }
+    else {
+      mention = {
+        text:
+          "<@" +
+          slackID +
+          "> Please write \"Test performed\" for <" +
+          url +  "|" + operateRow[1] + "> at H" + 
+          operateRow[0] + " since the PR is Feature or Bug fix.",
+      };
+    }
     const mentionPayload = JSON.stringify(mention);
     const response = await fetch(postUrl, {
       method: "POST",
@@ -132,8 +145,17 @@ async function main(auth: GoogleAuth<JSONClient>) {
         row[5].toLowerCase().includes("change topic") ||
         row[5].toLowerCase().includes("topic change") ||
         row[5].toLowerCase().includes("remove"))
-      ) {       
-        mentionAuthor(row);
+      ) {
+        const has_product_effect = true;
+        mentionAuthor(row, has_product_effect);
+        isMentioned = true;
+        await sleep(1000);
+      } else if (
+        (row[9] == "Features" && row[7] == "UNDEFINED") ||
+        (row[9] == "Bug Fixes" && row[7] == "UNDEFINED")
+      ) {
+        const has_product_effect = false;
+        mentionAuthor(row, has_product_effect);
         isMentioned = true;
         await sleep(1000);
       }
