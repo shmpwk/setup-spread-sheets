@@ -2,6 +2,8 @@ name: test-generate-release-note
 on:
   push:
   workflow_dispatch:
+  repository_dispatch:
+    types: [feat/repository-dispatch]
 
 jobs:
   write-sheet-post-slack:
@@ -15,6 +17,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - name: Event Information
+        run: |
+          echo "Event '${{ github.event.action }}' received from '${{ github.event.client_payload.repository }}'"
       - uses: ./
         with:
           release-spreadsheet-id: ${{ secrets.RELEASE_SPREADSHEET_ID }}
