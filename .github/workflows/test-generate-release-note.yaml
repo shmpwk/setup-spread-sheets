@@ -17,6 +17,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - if: github.event.client_payload
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.client_payload.branch }}
       - name: Event Information
         run: |
           echo "Event '${{ github.event.action }}' received from '${{ github.event.client_payload.repository }}'"
